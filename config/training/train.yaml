@@ -1,0 +1,4 @@
+training:
+  run_type: "train"
+  save_model: true
+  checkpoint_dir: "artifacts/models"

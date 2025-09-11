@@ -1,0 +1,4 @@
+evaluation:
+  metrics: ["accuracy", "recall", "precision", "roc_auc"]
+  log_conf_matrix: true
+  plot_training_curves: true

@@ -1,0 +1,11 @@
+data_path: "data/raw/breast_cancer.csv"
+data_test_path: "data/raw/breast_cancer_test.csv"
+target_col: "diagnosis"
+features: ["mean radius","mean texture","mean perimeter","mean area","mean smoothness"]
+seed: 42
+batch_size: 32
+preprocessing:
+  scaler: "StandardScaler"
+  encode_categorical: false
+  save_dir: "artifacts/preprocessors"
+  val_size: 0.1
