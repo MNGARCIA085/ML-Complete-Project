@@ -1,9 +1,9 @@
 import os
+import joblib
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-
 
 
 class Preprocessor:
@@ -15,7 +15,7 @@ class Preprocessor:
         self.scaler = None
         self.encoder = cfg.preprocessing.encode_categorical or {"M": 1, "B": 0}
         self.feature_columns = None
-        self.input_shape = None
+        self.input_shape = None  # NEW
         self.save_dir = cfg.preprocessing.save_dir
         os.makedirs(self.save_dir, exist_ok=True)
 
@@ -23,32 +23,39 @@ class Preprocessor:
         return pd.read_csv(filepath)
 
     def split_data(self, df):
-
-        # pre-split preprocessing
+        # Drop unwanted cols
         drop_cols = ["id", "Unnamed: 32"]
         df = df.drop(columns=[c for c in drop_cols if c in df.columns]).dropna()
+
+        # Encode labels
         labels = df[self.target_col].map(self.encoder)
+
+        # Features
         features = df.drop(columns=[self.target_col])
         self.feature_columns = features.columns.tolist()
-        self.input_shape = (features.shape[1],)
 
+        # input shape
+        self.input_shape = (features.shape[1],)  # store input shape
 
-        # train/test split
+        # Split before scaling
         X_train, X_val, y_train, y_val = train_test_split(
             features, labels,
             test_size=self.val_size,
             stratify=labels,
             random_state=self.random_state
         )
+
         return X_train, X_val, y_train, y_val
 
     def fit_scaler(self, X_train):
-        self.scaler = StandardScaler()
+        self.scaler = StandardScaler() # cambair dsp. x el de la config!!!!
         X_train_scaled = pd.DataFrame(
             self.scaler.fit_transform(X_train),
             columns=X_train.columns,
             index=X_train.index
         )
+        # Save scaler for later
+        joblib.dump(self.scaler, os.path.join(self.save_dir, "scaler.pkl"))
         return X_train_scaled
 
     def transform_with_scaler(self, X):
@@ -68,43 +75,32 @@ class Preprocessor:
         return ds.batch(bs)
 
     def prepare_train_val(self, filepath):
-        
-        # laod data
         df = self.load_data(filepath)
-
-        # pre-split transforms and then test/val/split
-        X_train, X_val, y_train, y_val = self.split_data(df)
-        
-        # scaler. only fit with train
+        X_train, X_val, y_train, y_val = self.split_data(df) # preprocess and split data
         X_train_scaled = self.fit_scaler(X_train)
         X_val_scaled = self.transform_with_scaler(X_val)
 
-        # tf datasets
         train_ds = self.tf_dataset(X_train_scaled, y_train, shuffle=True)
         val_ds = self.tf_dataset(X_val_scaled, y_val, shuffle=False)
 
-        # Return datasets + objects needed for MLflow logging / later reuse
-        return {
-            "train_ds": train_ds,
-            "val_ds": val_ds,
-            "scaler": self.scaler,
-            "encoder": self.encoder,
-            "feature_columns": self.feature_columns,
-            "input_shape": self.input_shape
-        }
+        return train_ds, val_ds
 
     def prepare_test(self, filepath):
+        # Load scaler if not in memory
         if self.scaler is None:
-            raise ValueError("Scaler not fitted. Run prepare_train_val first.")
+            self.scaler = joblib.load(os.path.join(self.save_dir, "scaler.pkl"))
 
         df = self.load_data(filepath)
+        # Process features/labels but do NOT fit scaler
         drop_cols = ["id", "Unnamed: 32"]
         df = df.drop(columns=[c for c in drop_cols if c in df.columns]).dropna()
         labels = df[self.target_col].map(self.encoder)
         features = df.drop(columns=[self.target_col])
         features_scaled = self.transform_with_scaler(features)
+
         test_ds = self.tf_dataset(features_scaled, labels, shuffle=False)
         return test_ds
+
 
     def get_input_shape(self):
         if self.input_shape is None:
@@ -112,23 +108,5 @@ class Preprocessor:
         return self.input_shape
 
 
-
-""" HOW TO USE 
-from scripts.preprocessor import Preprocessor
-import mlflow
-
-preproc = Preprocessor(cfg.data)
-prep_results = preproc.prepare_train_val(cfg.data.data_path)
-
-train_ds = prep_results["train_ds"]
-val_ds = prep_results["val_ds"]
-input_shape = prep_results["input_shape"]
-scaler = prep_results["scaler"]
-encoder = prep_results["encoder"]
-features = prep_results["feature_columns"]
-
-# MLflow logging outside
-with mlflow.start_run():
-    mlflow.log_params({"features": features, "input_shape": input_shape})
-    mlflow.log_artifact("path/to/scaler.pkl")  # optionally save scaler
-"""
+# later i will write this code better
+# generic preprocess, pre-split transform, post-splits transform

@@ -13,7 +13,18 @@ def main(cfg: DictConfig):
     preprocessor = Preprocessor(cfg.data)
 
     # Train + val
-    train_ds, val_ds = preprocessor.prepare_train_val(cfg.data.data_path)
+    prep_results = preprocessor.prepare_train_val(cfg.data.data_path)
+    
+    train_ds = prep_results["train_ds"]
+    val_ds = prep_results["val_ds"]
+    input_shape = prep_results["input_shape"][0] # because is something like (30, )
+    scaler = prep_results["scaler"]
+    encoder = prep_results["encoder"]
+    features = prep_results["feature_columns"]
+
+
+
+    # basic prints
     print(f"Train dataset batches: {len(list(train_ds))}")
     print(f"Val dataset batches: {len(list(val_ds))}")
 

@@ -18,12 +18,32 @@ def main(cfg: DictConfig):
     
     # Initialize preprocessor with cfg.data
     preprocessor = Preprocessor(cfg.data)
-    train_ds, val_ds = preprocessor.prepare_train_val(cfg.data.data_path)
+    
+    # train/val
+    prep_results = preprocessor.prepare_train_val(cfg.data.data_path)
+    train_ds = prep_results["train_ds"]
+    val_ds = prep_results["val_ds"]
+    input_shape = prep_results["input_shape"][0] # because is something like (30, )
+    scaler = prep_results["scaler"]
+
+
+    print(scaler)
+    print("Means:", scaler.mean_)          # per-feature mean
+    print("Scale (std):", scaler.scale_)   # per-feature standard deviation
+    print("Var:", scaler.var_)             # per-feature variance
+    print("n_samples_seen:", scaler.n_samples_seen_)
+
+    encoder = prep_results["encoder"]
+    features = prep_results["feature_columns"]
+
+    # test
     test_ds = preprocessor.prepare_test(cfg.data.data_test_path)
 
 
-    input_shape = preprocessor.get_input_shape()
-    print("Input shape for model:", input_shape)  # e.g., (30,)
+    #input_shape = preprocessor.get_input_shape()
+    print("Input shape for model:", input_shape)  # e.g., (30,), it should be use with input_shape[0]
+
+    print(input_shape)
 
 
     # Determine which model to train from cfg.model
@@ -34,7 +54,7 @@ def main(cfg: DictConfig):
 
 
     # Build the model
-    model = MODEL_BUILDERS[model_name](cfg.model, input_dim=input_shape[0])
+    model = MODEL_BUILDERS[model_name](cfg.model, input_dim=input_shape)
     print(model.summary())
 
 
