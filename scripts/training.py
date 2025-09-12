@@ -122,6 +122,16 @@ def main(cfg: DictConfig):
             plt.close()
             mlflow.log_artifact(cm_path, artifact_path="plots")
 
+            """
+            cleanr saving
+            import time
+            cm_path = f"{model_name}_confusion_matrix_{int(time.time())}.png"
+            plt.savefig(cm_path)
+            mlflow.log_artifact(cm_path, artifact_path="plots")
+
+            or cm_path = f"{model_name}_confusion_matrix_epoch{epoch}.png"
+            """
+
             # Store results for comparison
             results_list.append({
                 "model_name": model_name,

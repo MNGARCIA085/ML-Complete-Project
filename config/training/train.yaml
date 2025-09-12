@@ -1,4 +1,4 @@
-epochs: 2
+epochs: 8
 callbacks: []
 hyperparameters:
   optimizer: "adam"
