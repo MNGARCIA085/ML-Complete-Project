@@ -1,0 +1,3 @@
+experiment_name: "experiment_name"
+artifact_path: "model"
+log_models: true

@@ -1,0 +1,10 @@
+artifact_location: file:///home/marcos/Escritorio/AI-prod/ML-Complete-Project/mlruns/345369484917816523/models/m-de915e6ee2b24a72a8fa32165ec25a58/artifacts
+creation_timestamp: 1757705781020
+experiment_id: '345369484917816523'
+last_updated_timestamp: 1757705786556
+model_id: m-de915e6ee2b24a72a8fa32165ec25a58
+model_type: null
+name: model
+source_run_id: 9abf5799d2634c0fbb305d1d48597ed5
+status: 2
+status_message: null

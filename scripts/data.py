@@ -22,6 +22,13 @@ def main(cfg: DictConfig):
     encoder = prep_results["encoder"]
     features = prep_results["feature_columns"]
 
+    # scaler
+    print(scaler)
+    print("Means:", scaler.mean_)          # per-feature mean
+    print("Scale (std):", scaler.scale_)   # per-feature standard deviation
+    print("Var:", scaler.var_)             # per-feature variance
+    print("n_samples_seen:", scaler.n_samples_seen_)
+
 
 
     # basic prints

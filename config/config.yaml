@@ -3,8 +3,10 @@ defaults:
   - model: baseline # default model
   - training: train
   - evaluation: eval
+  - logging: mlflow
   - override hydra/job_logging: disabled
   - override hydra/hydra_logging: disabled
+
 
 seed: 42
 experiment_name: breast_cancer_nn

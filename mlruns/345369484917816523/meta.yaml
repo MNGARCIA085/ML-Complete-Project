@@ -1,0 +1,6 @@
+artifact_location: file:///home/marcos/Escritorio/AI-prod/ML-Complete-Project/mlruns/345369484917816523
+creation_time: 1757703300145
+experiment_id: '345369484917816523'
+last_update_time: 1757703300145
+lifecycle_stage: active
+name: breast_cancer_nn

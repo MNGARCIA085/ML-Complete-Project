@@ -7,9 +7,10 @@ from src.models.utils import compile_model
 def build_baseline(cfg, input_dim=None):
     model = Sequential([
         Input(shape=(input_dim,)),
-        Dense(cfg.hidden_layer_neurons, cfg.hidden_layer_activation),
-        Dense(1, activation=cfg.output_activation)
-    ],name=cfg.name)
+        Dense(units=cfg.hidden_layer_neurons, activation=cfg.hidden_layer_activation),
+        Dense(units=1, activation=cfg.output_activation)
+    ], name=cfg.name)
+    # put compile here; i dont need it separate
     return model
 
 

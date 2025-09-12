@@ -1,4 +1,5 @@
-training:
-  run_type: "train"
-  save_model: true
-  checkpoint_dir: "artifacts/models"
+epochs: 2
+callbacks: []
+hyperparameters:
+  optimizer: "adam"
+  learning_rate: 0.001

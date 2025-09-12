@@ -1,0 +1,14 @@
+artifact_uri: file:///home/marcos/Escritorio/AI-prod/ML-Complete-Project/mlruns/345369484917816523/90bea81cba47476fa95c0705648dba4a/artifacts
+end_time: 1757704742585
+entry_point_name: ''
+experiment_id: '345369484917816523'
+lifecycle_stage: active
+run_id: 90bea81cba47476fa95c0705648dba4a
+run_name: baseline
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1757704741340
+status: 4
+tags: []
+user_id: marcos
