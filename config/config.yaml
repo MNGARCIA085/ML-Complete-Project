@@ -2,6 +2,7 @@ defaults:
   - data: data
   - model: baseline # default model
   - training: train
+  - tuning: tune
   - evaluation: eval
   - logging: mlflow
   - override hydra/job_logging: disabled

@@ -1,0 +1,150 @@
+import yaml
+import time
+import tensorflow as tf
+import kerastuner as kt
+
+
+
+
+
+import random
+import numpy as np
+import tensorflow as tf
+
+
+
+# seed
+def set_seed(seed=42):
+    """Set seed for random, numpy, and tensorflow."""
+    random.seed(seed)
+    np.random.seed(seed)
+    tf.random.set_seed(seed)
+
+
+
+
+# Capture history
+class HistoryCapture(tf.keras.callbacks.Callback):
+    """Capture training history in a dict format."""
+    def __init__(self):
+        super().__init__()
+        self.history = {}
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        for k, v in logs.items():
+            self.history.setdefault(k, []).append(float(v))
+
+
+
+
+# compute F1-score
+def compute_f1(precision, recall):
+    """Compute F1"""
+    f1 = 2 * (precision * recall) / (precision + recall + 1e-8)
+    return f1
+
+
+
+class ModelTuner:
+    # constructor
+    def __init__(self, cfg, build_model_fn, input_dim, model_cfg): # an already build and compile model
+
+        self.max_trials = cfg.tuning.get("max_trials", 2)
+        self.executions_per_trial = cfg.tuning.get("executions_per_trial", 1)
+        self.epochs = cfg.tuning.get("epochs", 2)
+        self.patience = cfg.tuning.get("patience", 5)
+        self.seed = cfg.seed
+
+
+        self.build_model_fn = build_model_fn
+        self.input_dim = input_dim
+
+        self.cfg = cfg
+
+        self.model_cfg = model_cfg
+
+
+    # run
+    def run(self, train_ds, val_ds):
+        set_seed(self.seed)
+        start_time = time.time()
+
+        tuner = self._create_tuner()
+
+        early_stopping_cb = tf.keras.callbacks.EarlyStopping(
+            monitor="val_loss", patience=self.patience, restore_best_weights=True
+        )
+
+        # search
+        tuner.search(train_ds, validation_data=val_ds,
+                     epochs=self.epochs, callbacks=[early_stopping_cb])
+
+        # Best model + hyperparameters
+        best_model = tuner.get_best_models(num_models=1)[0]
+        best_hp = tuner.get_best_hyperparameters(num_trials=1)[0]
+
+        # Retrain
+        history, trained_epochs = self._train_best_model(
+            best_model, train_ds, val_ds, self.epochs, early_stopping_cb,
+        )
+
+        # Evaluate
+        val_metrics_dict = self._evaluate_model(best_model, val_ds)
+
+        # Collect extra hyperparameters
+        extra_hyperparams = self._collect_extra_hyperparams(best_model, train_ds, trained_epochs)
+
+        elapsed_time = time.time() - start_time
+
+        # return
+        return best_model, best_hp, val_metrics_dict
+
+    # ---------------- HELPER METHODS ----------------
+
+    def _create_tuner(self):
+        return kt.RandomSearch(
+            #lambda hp: self.build_model_fn(hp),
+            lambda hp: self.build_model_fn(self.model_cfg, self.input_dim, hp),
+            objective="val_accuracy",
+            max_trials=self.max_trials,
+            executions_per_trial=self.executions_per_trial,
+            directory="tuner_results",
+            project_name=self.build_model_fn.__name__,
+            overwrite=True
+        )
+
+    def _train_best_model(self, model, train_ds, val_ds, epochs, *callbacks):
+        history_cb = HistoryCapture()
+        model.fit(
+            train_ds,
+            validation_data=val_ds,
+            epochs=epochs,
+            callbacks=[*callbacks, history_cb],
+            verbose=0
+        )
+        trained_epochs = len(history_cb.history.get("loss", []))
+        return history_cb.history, trained_epochs
+
+    def _evaluate_model(self, model, val_ds):
+        val_metrics = model.evaluate(val_ds, verbose=0)
+        return {
+            "loss": val_metrics[0],
+            "accuracy": val_metrics[1],
+            "precision": val_metrics[2],
+            "recall": val_metrics[3],
+            "f1_score": compute_f1(val_metrics[2], val_metrics[3])
+        }
+
+    def _collect_extra_hyperparams(self, model, train_ds, trained_epochs):
+        batch_size_tensor = getattr(train_ds, "_batch_size", None)
+        batch_size = int(batch_size_tensor.numpy()) if batch_size_tensor is not None else "unknown"
+        optimizer = type(model.optimizer).__name__
+        learning_rate = float(tf.keras.backend.get_value(model.optimizer.learning_rate))
+
+        return {
+            "trained_epochs": trained_epochs,
+            "batch_size": batch_size,
+            "optimizer": optimizer,
+            "final_learning_rate": learning_rate,
+        }

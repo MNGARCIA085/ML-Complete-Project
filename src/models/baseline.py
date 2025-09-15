@@ -34,3 +34,32 @@ def build_compile_tuner(hp):
     # Recompile model with tunable learning rate
     compile_model(model, learning_rate)
     return model
+
+
+
+
+def build_compile_baseline_tuner(cfg, input_dim, hp):
+    learning_rate = hp.Float("learning_rate", cfg.model.lr.low, cfg.model.lr.high, sampling=cfg.model.lr.sampling)
+
+    model = Sequential([
+        Input(shape=(input_dim,)),
+        Dense(units=cfg.model.hidden_layer_neurons, activation=cfg.model.hidden_layer_activation),
+        Dense(units=1, activation=cfg.model.output_activation)
+    ], name=cfg.model.name)
+
+    compile_model(model, learning_rate)
+    return model
+
+
+
+def build_compile_baseline_tuner_2(cfg, input_dim, hp):
+    learning_rate = hp.Float("learning_rate", cfg.lr.low, cfg.lr.high, sampling=cfg.lr.sampling)
+
+    model = Sequential([
+        Input(shape=(input_dim,)),
+        Dense(units=cfg.hidden_layer_neurons, activation=cfg.hidden_layer_activation),
+        Dense(units=1, activation=cfg.output_activation)
+    ], name=cfg.name)
+
+    compile_model(model, learning_rate)
+    return model

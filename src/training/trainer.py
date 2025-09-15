@@ -17,6 +17,8 @@ class ModelTrainer:
 
     def train(self, model, train_ds, val_ds):
 
+        # compile the model here!!!!!!!!!! given the build_fn and an appropiate config file
+
         # Fill missing hyperparameters
         self._fill_missing_hyperparameters()
 

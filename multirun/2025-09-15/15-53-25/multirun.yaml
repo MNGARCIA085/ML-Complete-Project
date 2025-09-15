@@ -1,0 +1,188 @@
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    root:
+      level: ERROR
+    disable_existing_loggers: true
+  job_logging:
+    version: 1
+    root:
+      level: ERROR
+    disable_existing_loggers: true
+  env: {}
+  mode: MULTIRUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.mode=MULTIRUN
+    task:
+    - model=baseline_tuner,model_1_tuner
+  job:
+    name: testing_models
+    chdir: null
+    override_dirname: model=baseline_tuner,model_1_tuner
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/marcos/Escritorio/AI-prod/ML-Complete-Project
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /home/marcos/Escritorio/AI-prod/ML-Complete-Project/config
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: ???
+    choices:
+      logging: mlflow
+      evaluation: eval
+      training: train
+      model: baseline
+      data: data
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: disabled
+      hydra/hydra_logging: disabled
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false
+data:
+  data_path: data/raw/breast_cancer.csv
+  data_test_path: data/raw/breast_cancer_test.csv
+  target_col: diagnosis
+  features:
+  - mean radius
+  - mean texture
+  - mean perimeter
+  - mean area
+  - mean smoothness
+  seed: 42
+  batch_size: 32
+  preprocessing:
+    scaler: StandardScaler
+    encode_categorical: false
+    save_dir: artifacts/preprocessors
+    val_size: 0.1
+model:
+  name: baseline
+  type: Dense
+  hidden_layer_neurons: 10
+  output_activation: sigmoid
+  lr:
+    low: 0.0001
+    high: 0.01
+    log: true
+  batch_size:
+  - 16
+  - 32
+  - 64
+  dropout:
+    use: true
+    low: 0.1
+    high: 0.5
+  hidden_layer_activation: relu
+training:
+  epochs: 8
+  callbacks: []
+  hyperparameters:
+    optimizer: adam
+    learning_rate: 0.001
+evaluation:
+  evaluation:
+    metrics:
+    - accuracy
+    - recall
+    - precision
+    - roc_auc
+    log_conf_matrix: true
+    plot_training_curves: true
+logging:
+  experiment_name: experiment_name
+  artifact_path: model
+  log_models: true
+seed: 42
+experiment_name: breast_cancer_nn

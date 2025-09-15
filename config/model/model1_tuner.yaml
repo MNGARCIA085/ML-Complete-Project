@@ -1,0 +1,16 @@
+name: "model1"
+type: "Dense with dropout"
+layers: [64, 32]
+output_activation: "sigmoid"
+lr:
+  low: 0.0001
+  high: 0.01
+  sampling: "log"
+  log: true
+batch_size: [16, 32]
+dropout:
+  use: true
+  low: 0.1
+  high: 0.5
+  default: 0.1
+activation_options: ["relu", "tanh"]

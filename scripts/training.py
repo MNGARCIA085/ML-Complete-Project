@@ -193,3 +193,20 @@ def main(cfg: DictConfig):
 
 if __name__ == "__main__":
     main()
+
+
+
+"""
+
+use particular file
+
+global_cfg = hydra.compose(config_name="config/config.yaml")
+
+model_cfg = hydra.compose(config_name="config/model/baseline_tuner.yaml").model
+
+tuner = ModelTuner(build_fn=build_compile_model_one_tuner,
+                   tuning_cfg=model_cfg,
+                   input_dim=global_cfg.input_dim,
+                   seed=global_cfg.seed)
+
+"""
