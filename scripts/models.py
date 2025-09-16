@@ -15,18 +15,18 @@ MODEL_BUILDERS = {
 def main(cfg: DictConfig):
 
     print("=== Data Preparation ===")
-    
+
     # Initialize preprocessor with cfg.data
     preprocessor = Preprocessor(cfg.data)
-    
+
     # train/val
     prep_results = preprocessor.prepare_train_val(cfg.data.data_path)
-    train_ds = prep_results["train_ds"]
-    val_ds = prep_results["val_ds"]
-    input_shape = prep_results["input_shape"][0] # e.g., (30,), it should be use with input_shape[0]
-    scaler = prep_results["scaler"]
-    encoder = prep_results["encoder"]
-    features = prep_results["feature_columns"]
+
+    # keys
+    keys = ["train_ds", "val_ds", "scaler", "encoder", "feature_columns", "input_shape"]
+    train_ds, val_ds, scaler, encoder, features, input_shape_raw = (prep_results[k] for k in keys)
+    input_shape = input_shape_raw[0]  # keep the first element as before
+
 
     # test
     test_ds = preprocessor.prepare_test(cfg.data.data_test_path)
@@ -52,8 +52,12 @@ if __name__ == "__main__":
     main()
 
 
-# fn+prep in a coimbined fn if needed; build compile model + its according preprocessor
 
+"""
+python -m scripts.models  # baseline by default
+python -m scripts.models -m model=model1
+python -m scripts.models -m model=baseline,model1
+"""
 
 
 # python -m scripts.models -m model=baseline,model1 (multirun)

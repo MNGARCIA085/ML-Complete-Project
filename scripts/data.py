@@ -1,6 +1,6 @@
 import hydra
 from omegaconf import DictConfig
-from src.data.preprocessor import Preprocessor  # assuming your class is in src/data/preprocessor.py
+from src.data.preprocessor import Preprocessor
 
 
 @hydra.main(config_path="../config", config_name="config", version_base="1.3")
@@ -9,18 +9,21 @@ def main(cfg: DictConfig):
 
     #print(cfg.data)
 
-    # Initialize preprocessor
+    # Initialize preprocessor with cfg.data
     preprocessor = Preprocessor(cfg.data)
 
-    # Train + val
+    # train/val
     prep_results = preprocessor.prepare_train_val(cfg.data.data_path)
-    
-    train_ds = prep_results["train_ds"]
-    val_ds = prep_results["val_ds"]
-    input_shape = prep_results["input_shape"][0] # because is something like (30, )
-    scaler = prep_results["scaler"]
-    encoder = prep_results["encoder"]
-    features = prep_results["feature_columns"]
+
+    # Unpack all relevant items at once
+    train_ds, val_ds = prep_results["train_ds"], prep_results["val_ds"]
+    input_shape, scaler, encoder, features = (
+        prep_results["input_shape"][0],
+        prep_results["scaler"],
+        prep_results["encoder"],
+        prep_results["feature_columns"],
+    )
+
 
     # scaler
     print(scaler)
@@ -28,8 +31,6 @@ def main(cfg: DictConfig):
     print("Scale (std):", scaler.scale_)   # per-feature standard deviation
     print("Var:", scaler.var_)             # per-feature variance
     print("n_samples_seen:", scaler.n_samples_seen_)
-
-
 
     # basic prints
     print(f"Train dataset batches: {len(list(train_ds))}")
@@ -48,12 +49,7 @@ if __name__ == "__main__":
     main()
 
 
-#python -m scripts.data
-#python -m scripts.data data.batch_size=64
-
 """
-python src/data.py data.batch_size=64 data.preprocessing.val_size=0.2
-
-python src/data.py data.data_path="data/raw/new_dataset.csv"
-print(OmegaConf.to_yaml(cfg))
+python -m scripts.data
+python -m scripts.data data.batch_size=64
 """

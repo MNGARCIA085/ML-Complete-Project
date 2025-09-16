@@ -2,14 +2,9 @@ import yaml
 import time
 import tensorflow as tf
 import kerastuner as kt
-
-
-
-
-
 import random
 import numpy as np
-import tensorflow as tf
+
 
 
 
@@ -48,20 +43,21 @@ def compute_f1(precision, recall):
 
 class ModelTuner:
     # constructor
-    def __init__(self, cfg, build_model_fn, input_dim, model_cfg): # an already build and compile model
+    def __init__(self, tuning_cfg, model_cfg, build_model_fn, input_dim, seed=42):
 
-        self.max_trials = cfg.tuning.get("max_trials", 2)
-        self.executions_per_trial = cfg.tuning.get("executions_per_trial", 1)
-        self.epochs = cfg.tuning.get("epochs", 2)
-        self.patience = cfg.tuning.get("patience", 5)
-        self.seed = cfg.seed
+        # tuning
+        self.max_trials = tuning_cfg.get("max_trials", 2)
+        self.executions_per_trial = tuning_cfg.get("executions_per_trial", 1)
+        self.epochs = tuning_cfg.get("epochs", 2)
+        self.patience = tuning_cfg.get("patience", 5)
+        self.seed = seed
 
-
+        # model
         self.build_model_fn = build_model_fn
         self.input_dim = input_dim
 
-        self.cfg = cfg
-
+        # configs
+        self.tuning_cfg = tuning_cfg
         self.model_cfg = model_cfg
 
 
@@ -104,7 +100,6 @@ class ModelTuner:
 
     def _create_tuner(self):
         return kt.RandomSearch(
-            #lambda hp: self.build_model_fn(hp),
             lambda hp: self.build_model_fn(self.model_cfg, self.input_dim, hp),
             objective="val_accuracy",
             max_trials=self.max_trials,

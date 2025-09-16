@@ -3,13 +3,14 @@ type: "Dense with dropout"
 layers: [64, 32]
 output_activation: "sigmoid"
 lr:
+  default: 0.001
   low: 0.0001
   high: 0.01
-  log: true
+  sampling: "log"
 batch_size: [16, 32]
 dropout:
-  use: true
   low: 0.1
   high: 0.5
+  step: 0.1
   default: 0.1
 activation_options: ["relu", "tanh"]

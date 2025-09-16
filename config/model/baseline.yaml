@@ -3,12 +3,10 @@ type: "Dense"
 hidden_layer_neurons: 10
 output_activation: "sigmoid"
 lr:
+  default: 0.001
   low: 0.0001
   high: 0.01
+  sampling: "log"
   log: true
 batch_size: [16, 32, 64]
-dropout:
-  use: true
-  low: 0.1
-  high: 0.5
 hidden_layer_activation: "relu"
