@@ -50,7 +50,7 @@ def main(cfg: DictConfig):
         model_cfg = hydra.compose(config_name="config", overrides=[f"model={model_name}"]).model #_tuner
 
         # Pass the build function for this model
-        build_fn = MODEL_BUILDERS[model_name]  # e.g., build_compile_model_one, build_compile_baseline
+        build_fn = MODEL_BUILDERS[model_name]  # e.g., build_compile_model_one, build_compile_baseline (fn that buidls anc compile the model)
 
 
         print(model_cfg)

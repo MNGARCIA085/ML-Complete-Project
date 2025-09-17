@@ -1,5 +1,17 @@
-epochs: 8
+epochs: 4
 callbacks: []
-hyperparameters:
-  optimizer: "adam"
-  learning_rate: 0.001
+optimizer:
+  type: "adam"
+  lr:
+    default: 0.001
+    low: 0.0001
+    high: 0.01
+    sampling: "log"
+scheduler:
+  type: "cosine"
+  warmup_epochs: 5
+loss: "binary_crossentropy"
+metrics: ['accuracy', 'precision', 'recall']
+
+
+
