@@ -1,0 +1,22 @@
+artifact_path: file:///home/marcos/Escritorio/AI-prod/ML-Complete-Project/mlruns/694095714933704614/models/m-31f7a033a40e4e83b89dad78faa24139/artifacts
+flavors:
+  python_function:
+    data: data
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.tensorflow
+    python_version: 3.10.12
+  tensorflow:
+    code: null
+    data: data
+    keras_version: 2.20.0
+    model_type: keras
+    save_format: tf
+mlflow_version: 3.3.2
+model_id: m-31f7a033a40e4e83b89dad78faa24139
+model_size_bytes: 76789
+model_uuid: m-31f7a033a40e4e83b89dad78faa24139
+prompts: null
+run_id: 761d8be5a2474b159531dc4c68772c64
+utc_time_created: '2025-09-17 23:21:14.782360'

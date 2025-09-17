@@ -4,7 +4,7 @@ from src.models.utils import compile_model
 
 
 # build and compile model
-def build_compile_baseline(model_cfg, input_dim, hp=None):
+def build_compile_baseline(model_cfg, training_cfg, input_dim, hp=None):
     """
     Builds and compiles a model, optionally using hp for tuning.
     """
@@ -22,7 +22,7 @@ def build_compile_baseline(model_cfg, input_dim, hp=None):
         Dense(1, activation=model_cfg.output_activation)
     ], name=model_cfg.name)
 
-    compile_model(model, lr)
+    compile_model(model, training_cfg)
     return model
 
 

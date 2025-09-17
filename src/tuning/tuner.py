@@ -43,7 +43,7 @@ def compute_f1(precision, recall):
 
 class ModelTuner:
     # constructor
-    def __init__(self, tuning_cfg, model_cfg, build_model_fn, input_dim, seed=42):
+    def __init__(self, tuning_cfg, training_cfg, model_cfg, build_model_fn, input_dim, seed=42):
 
         # tuning
         self.max_trials = tuning_cfg.get("max_trials", 2)
@@ -58,6 +58,7 @@ class ModelTuner:
 
         # configs
         self.tuning_cfg = tuning_cfg
+        self.training_cfg = training_cfg
         self.model_cfg = model_cfg
 
 
@@ -100,7 +101,7 @@ class ModelTuner:
 
     def _create_tuner(self):
         return kt.RandomSearch(
-            lambda hp: self.build_model_fn(self.model_cfg, self.input_dim, hp),
+            lambda hp: self.build_model_fn(self.model_cfg, self.training_cfg, self.input_dim, hp),
             objective="val_accuracy",
             max_trials=self.max_trials,
             executions_per_trial=self.executions_per_trial,

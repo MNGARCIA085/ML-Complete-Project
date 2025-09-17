@@ -54,7 +54,7 @@ def main(cfg: DictConfig):
         
         # model
         model_cfg = hydra.compose(config_name="config", overrides=[f"model={model_name}"]).model # override with the apporpiate file (e.g. baseline.yaml or model1.yaml...)
-        model = MODEL_BUILDERS[model_name](model_cfg, input_dim=input_shape) # model already build and compiled
+        model = MODEL_BUILDERS[model_name](model_cfg, cfg.training, input_dim=input_shape) # model already build and compiled
 
         # trainer
         trainer = ModelTrainer(cfg.training)

@@ -57,7 +57,7 @@ def main(cfg: DictConfig):
 
         # Create tuner
         
-        tuner = ModelTuner(cfg.tuning, model_cfg, build_fn, input_dim)
+        tuner = ModelTuner(cfg.tuning, cfg.training, model_cfg, build_fn, input_dim)
 
         # Run tuner
         best_model, best_hp, val_metrics = tuner.run(train_ds, val_ds)

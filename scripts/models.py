@@ -27,10 +27,6 @@ def main(cfg: DictConfig):
     train_ds, val_ds, scaler, encoder, features, input_shape_raw = (prep_results[k] for k in keys)
     input_shape = input_shape_raw[0]  # keep the first element as before
 
-
-    # test
-    test_ds = preprocessor.prepare_test(cfg.data.data_test_path)
-
     #input_shape = preprocessor.get_input_shape()
     print("Input shape for model:", input_shape)  
 
@@ -42,11 +38,24 @@ def main(cfg: DictConfig):
 
 
     # Build the model
-    model = MODEL_BUILDERS[model_name](cfg.model, input_dim=input_shape)
+    model = MODEL_BUILDERS[model_name](cfg.model, cfg.training, input_dim=input_shape)
     print(model.summary())
 
+    # More info about the model
 
+    # Print optimizer
+    print("----------Optimizer--------------")
+    print(model.optimizer)        # shows optimizer object
+    print(model.optimizer.get_config())  # shows optimizer config (lr, beta1, etc.)
 
+    # for the metrics i might need to run the model for at least one epoch
+    """
+    # Metrics — version-safe way
+    # Use evaluate on a *tiny batch* to see what metrics would be computed
+    dummy_x, dummy_y = next(iter(train_ds.take(1)))  # take 1 batch
+    val_metrics = model.evaluate(dummy_x, dummy_y, verbose=0, return_dict=True)
+    print(val_metrics)
+    """
 
 if __name__ == "__main__":
     main()
@@ -62,26 +71,3 @@ python -m scripts.models -m model=baseline,model1
 
 # python -m scripts.models -m model=baseline,model1 (multirun)
 
-
-
-"""
-from omegaconf import DictConfig
-import hydra
-from hydra.utils import instantiate
-
-models_to_train = ["baseline", "model1"]
-
-@hydra.main(config_path="../config", config_name="config", version_base="1.3")
-def main(cfg: DictConfig):
-    for model_name in models_to_train:
-        # Override the model config for each iteration
-        cfg.model = hydra.compose(config_name="config", overrides=[f"model={model_name}"]).model
-        
-        print(f"Training model: {model_name}")
-        model = build_model(cfg.model, input_dim=cfg.data.input_dim)
-        # Call your training function here
-        train(model, cfg.data)
-
-if __name__ == "__main__":
-    main()
-"""

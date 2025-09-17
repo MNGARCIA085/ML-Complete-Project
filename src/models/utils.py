@@ -1,8 +1,8 @@
 import tensorflow as tf
 
-def compile_model(model, learning_rate=1e-3):
+def compile_model(model, training_cfg):
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
-        loss='binary_crossentropy',
-        metrics=['accuracy', 'precision', 'recall']
+        optimizer=tf.keras.optimizers.Adam(learning_rate=training_cfg.optimizer.lr.default),
+        loss=training_cfg.loss,
+        metrics=list(training_cfg.metrics)
     )
