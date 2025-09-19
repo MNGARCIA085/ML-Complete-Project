@@ -1,0 +1,2 @@
+- batch_size=64
+- data.preprocessing.val_size=0.2

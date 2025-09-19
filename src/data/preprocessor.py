@@ -9,15 +9,13 @@ from sklearn.preprocessing import StandardScaler
 class Preprocessor:
     def __init__(self, cfg):
         self.random_state = cfg.seed
-        self.val_size = cfg.preprocessing.val_size
-        self.target_col = cfg.target_col
         self.batch_size = cfg.batch_size
+        self.val_size = cfg.data.preprocessing.val_size
+        self.target_col = cfg.data.target_col
         self.scaler = None
-        self.encoder = cfg.preprocessing.encode_categorical or {"M": 1, "B": 0}
+        self.encoder = cfg.data.preprocessing.encode_categorical or {"M": 1, "B": 0}
         self.feature_columns = None
         self.input_shape = None
-        self.save_dir = cfg.preprocessing.save_dir
-        os.makedirs(self.save_dir, exist_ok=True)
 
     def load_data(self, filepath):
         return pd.read_csv(filepath)
@@ -112,23 +110,3 @@ class Preprocessor:
         return self.input_shape
 
 
-
-""" HOW TO USE 
-from scripts.preprocessor import Preprocessor
-import mlflow
-
-preproc = Preprocessor(cfg.data)
-prep_results = preproc.prepare_train_val(cfg.data.data_path)
-
-train_ds = prep_results["train_ds"]
-val_ds = prep_results["val_ds"]
-input_shape = prep_results["input_shape"]
-scaler = prep_results["scaler"]
-encoder = prep_results["encoder"]
-features = prep_results["feature_columns"]
-
-# MLflow logging outside
-with mlflow.start_run():
-    mlflow.log_params({"features": features, "input_shape": input_shape})
-    mlflow.log_artifact("path/to/scaler.pkl")  # optionally save scaler
-"""

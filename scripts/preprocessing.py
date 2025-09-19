@@ -10,7 +10,7 @@ def main(cfg: DictConfig):
     #print(cfg.data)
 
     # Initialize preprocessor with cfg.data
-    preprocessor = Preprocessor(cfg.data)
+    preprocessor = Preprocessor(cfg)
 
     # train/val
     prep_results = preprocessor.prepare_train_val(cfg.data.data_path)
@@ -51,5 +51,5 @@ if __name__ == "__main__":
 
 """
 python -m scripts.preprocessing
-python -m scripts.preprocessing data.batch_size=64
+python -m scripts.preprocessing batch_size=64 data.preprocessing.val_size=0.2
 """

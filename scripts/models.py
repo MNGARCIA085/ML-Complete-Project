@@ -17,7 +17,7 @@ def main(cfg: DictConfig):
     print("=== Data Preparation ===")
 
     # Initialize preprocessor with cfg.data
-    preprocessor = Preprocessor(cfg.data)
+    preprocessor = Preprocessor(cfg)
 
     # train/val
     prep_results = preprocessor.prepare_train_val(cfg.data.data_path)

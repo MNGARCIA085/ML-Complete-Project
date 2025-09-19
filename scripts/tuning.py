@@ -14,69 +14,34 @@ MODEL_BUILDERS = {
     "model1": build_compile_model_one
 }
 
-@hydra.main(config_path="../config", config_name="config", version_base=None)
-def main(cfg: DictConfig):
-    print("=== Data Preparation ===")
-    preprocessor = Preprocessor(cfg.data)
-    prep_results = preprocessor.prepare_train_val(cfg.data.data_path)
 
-    keys = ["train_ds", "val_ds", "scaler", "encoder", "feature_columns", "input_shape"]
-    train_ds, val_ds, scaler, encoder, features, input_shape_raw = (prep_results[k] for k in keys)
-    input_dim = input_shape_raw[0]
 
-    print("=== Models Tuning ===")
-    models_to_tune = ["baseline", "model1"]
-    all_results = []
 
-    # 1️⃣ Run for each model: log hyperparams + metrics
-    for model_name in models_to_tune:
-        print(f"=== Training model: {model_name} ===")
-        model_cfg = hydra.compose(config_name="config", overrides=[f"model={model_name}"]).model
-        build_fn = MODEL_BUILDERS[model_name]
 
-        tuner = ModelTuner(cfg.tuning, cfg.training, model_cfg, build_fn, input_dim)
-        best_model, best_hp, val_metrics = tuner.run(train_ds, val_ds)
 
-        # Track result for comparison
-        all_results.append({
-            "name": model_name,
-            "model": best_model,
-            "hp": best_hp.values,
-            "metrics": val_metrics
-        })
 
-        # MLflow run per model
-        with mlflow.start_run(run_name=f"{model_name}_run"):
-            mlflow.log_params(best_hp.values)
-            mlflow.log_metrics(val_metrics)
+def get_best_model(all_results, recall_threshold=0.8, metric_priority="f1_score"):
+    """
+    Select the best model based on recall threshold and a priority metric.
+    
+    Args:
+        all_results (list of dict): Each dict should contain "metrics", "hp", "name", "model".
+        threshold (float): Minimum recall to be considered a candidate.
+        metric_priority (str): Metric to use when multiple candidates meet threshold.
 
-        print(model_name)
-        print("Best hyperparameters:", best_hp.values)
-        print("Validation metrics:", val_metrics)
+    Returns:
+        dict: Best model result dictionary.
+    """
+    candidates = [res for res in all_results if res["metrics"]["recall"] >= recall_threshold]
+    if candidates:
+        return max(candidates, key=lambda r: r["metrics"][metric_priority])
+    return max(all_results, key=lambda r: r["metrics"]["recall"])
 
-    # 2️⃣ Comparison run: log all metrics, pick best
-    with mlflow.start_run(run_name="comparison") as comp_run:
-        for res in all_results:
-            prefix = res["name"]
-            mlflow.log_metrics({f"{prefix}_{k}": v for k, v in res["metrics"].items()})
 
-        # Pick best model using threshold + f1
-        threshold = 0.80 # later from config
-        candidates = [res for res in all_results if res["metrics"]["recall"] >= threshold]
-        if candidates:
-            best = max(candidates, key=lambda r: r["metrics"]["f1_score"])
-        else:
-            best = max(all_results, key=lambda r: r["metrics"]["recall"])
 
-        mlflow.log_params({"best_model_name": best["name"]})
-        mlflow.log_metrics({
-            "best_model_recall": best["metrics"]["recall"],
-            "best_model_f1": best["metrics"]["f1_score"]
-        })
 
-        comparison_run_id = comp_run.info.run_id  # save if needed
 
-    # 3️⃣ Final run: store best model + preprocessing + metrics
+def log_best_model(best, cfg, scaler, encoder, features):
     with mlflow.start_run(run_name="best_overall") as best_run:
         mlflow.log_params(best["hp"])
         mlflow.log_metrics(best["metrics"])
@@ -98,18 +63,99 @@ def main(cfg: DictConfig):
             pickle.dump(scaler, f)
         with open(os.path.join(artifact_dir, "encoder.pkl"), "wb") as f:
             pickle.dump(encoder, f)
-
-        # columns!!!!!!
         mlflow.log_dict({"features": features}, "preprocessing/features.json")
 
         mlflow.log_artifacts(artifact_dir, artifact_path="preprocessing")
 
+    return best_run.info.run_id
 
 
+
+
+
+
+
+@hydra.main(config_path="../config", config_name="config", version_base=None)
+def main(cfg: DictConfig):
+    print("=== Data Preparation ===")
+    preprocessor = Preprocessor(cfg)
+    prep_results = preprocessor.prepare_train_val(cfg.data.data_path)
+
+    keys = ["train_ds", "val_ds", "scaler", "encoder", "feature_columns", "input_shape"]
+    train_ds, val_ds, scaler, encoder, features, input_shape_raw = (prep_results[k] for k in keys)
+    input_dim = input_shape_raw[0]
+
+    print("=== Models Tuning ===")
+    models_to_tune = ["baseline", "model1"]
+    all_results = []
+
+    # Run for each model: log hyperparams + metrics
+    for model_name in models_to_tune:
+        print(f"=== Training model: {model_name} ===")
+
+        # Model
+        model_cfg = hydra.compose(config_name="config", overrides=[f"model={model_name}"]).model
+        build_fn = MODEL_BUILDERS[model_name]
+
+        # Tuning
+        tuner = ModelTuner(cfg.tuning, cfg.training, model_cfg, build_fn, input_dim)
+        best_model, best_hp, val_metrics = tuner.run(train_ds, val_ds)
+
+        # Track result for comparison
+        all_results.append({
+            "name": model_name,
+            "model": best_model,
+            "hp": best_hp.values,
+            "metrics": val_metrics
+        })
+
+        # MLflow run per model
+        with mlflow.start_run(run_name=f"{model_name}_run"):
+            mlflow.log_param("model_name", model_name)
+            mlflow.log_param("epochs", cfg.tuning.epochs)
+            mlflow.log_params(best_hp.values)
+            mlflow.log_metrics(val_metrics)
+
+        print(model_name)
+        print("Best hyperparameters:", best_hp.values)
+        print("Validation metrics:", val_metrics)
+
+
+
+
+    # Comparison run: log all metrics, pick best
+    with mlflow.start_run(run_name="comparison") as comp_run:
+
+        for res in all_results:
+            prefix = res["name"]
+            mlflow.log_metrics({f"{prefix}_{k}": v for k, v in res["metrics"].items()})
+
+        # maybe a couple of plots
+
+        comparison_run_id = comp_run.info.run_id  # save if needed
+
+
+
+    # get best model
+    best = get_best_model(all_results, recall_threshold=cfg.tuning.recall_threshold)
+
+    # Final run: store best model + preprocessing + metrics
+    best_run_id = log_best_model(
+        best=best,
+        cfg=cfg,
+        scaler=scaler,
+        encoder=encoder,
+        features=features,
+    )
+
+
+
+
+    # final prints
     print(f"Overall best model: {best['name']}")
     print("Best hyperparameters:", best["hp"])
     print("Best validation metrics:", best["metrics"])
-    print("Final best model run_id:", best_run.info.run_id)
+    print("Final best model run_id:", best_run_id)
 
 
 if __name__ == "__main__":

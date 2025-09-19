@@ -2,3 +2,4 @@ max_trials: 1
 executions_per_trial: 1
 epochs: 2
 patience: 5
+recall_threshold: 0.8

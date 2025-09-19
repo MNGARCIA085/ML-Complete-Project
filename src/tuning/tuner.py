@@ -45,22 +45,24 @@ class ModelTuner:
     # constructor
     def __init__(self, tuning_cfg, training_cfg, model_cfg, build_model_fn, input_dim, seed=42):
 
-        # tuning
-        self.max_trials = tuning_cfg.get("max_trials", 2)
-        self.executions_per_trial = tuning_cfg.get("executions_per_trial", 1)
-        self.epochs = tuning_cfg.get("epochs", 2)
-        self.patience = tuning_cfg.get("patience", 5)
+        # configs
+        self.tuning_cfg = tuning_cfg
+        self.training_cfg = training_cfg
+        self.model_cfg = model_cfg
+
+        # seed
         self.seed = seed
 
         # model
         self.build_model_fn = build_model_fn
         self.input_dim = input_dim
 
-        # configs
-        self.tuning_cfg = tuning_cfg
-        self.training_cfg = training_cfg
-        self.model_cfg = model_cfg
-
+        # tuning
+        self.max_trials = tuning_cfg.get("max_trials", 2)
+        self.executions_per_trial = tuning_cfg.get("executions_per_trial", 1)
+        self.epochs = tuning_cfg.get("epochs", 2)
+        self.patience = tuning_cfg.get("patience", 5)
+        
 
     # run
     def run(self, train_ds, val_ds):

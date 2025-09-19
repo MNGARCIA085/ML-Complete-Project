@@ -21,13 +21,90 @@ MODEL_BUILDERS = {
 
 
 
+
+# logging_utils .> ml_logger
+def log_experiment_results(results, model_name, model, scaler, encoder, features,
+                           metrics, cfg, loss_plot_path, acc_plot_path, cm_plot_path):
+    
+    # Log model name
+    mlflow.log_param("model_name", model_name)
+
+    # Log hyperparameters
+    mlflow.log_params(results["hyperparameters"])
+    
+    # Log metrics
+    mlflow.log_metrics({m: results[m] for m in metrics})
+
+    if cfg.save_artifacts:
+        # Log model
+        mlflow.tensorflow.log_model(model, artifact_path=cfg.artifact_path)
+
+        # Log preprocessing artifacts
+        with tempfile.NamedTemporaryFile(suffix=".pkl") as f:
+            pickle.dump(scaler, f)
+            f.flush()
+            mlflow.log_artifact(f.name, artifact_path=cfg.preprocessing.scaler)
+
+        with tempfile.NamedTemporaryFile(suffix=".pkl") as f:
+            pickle.dump(encoder, f)
+            f.flush()
+            mlflow.log_artifact(f.name, artifact_path=cfg.preprocessing.encoder)
+
+        mlflow.log_dict({"features": features}, cfg.preprocessing.features)
+
+    # Always log plots (these are lightweight and useful for debugging)
+    mlflow.log_artifact(loss_plot_path, artifact_path=cfg.plots)
+    mlflow.log_artifact(acc_plot_path, artifact_path=cfg.plots)
+    mlflow.log_artifact(cm_plot_path, artifact_path=cfg.plots)
+
+
+
+# log comparisson
+def log_model_comparison(results_list, metrics, plot_comparison, cfg):
+    # Comparison plots
+    comp_loss_path = plot_comparison(
+        results_list, metric="loss", ylabel="Loss",
+        title="Validation Loss Comparison", filename="comparison_val_loss.png"
+    )
+
+    comp_acc_path = plot_comparison(
+        results_list, metric="accuracy", ylabel="Accuracy",
+        title="Validation Accuracy Comparison", filename="comparison_val_accuracy.png"
+    )
+
+    # Log plots
+    mlflow.log_artifact(comp_loss_path, artifact_path=cfg.plots)
+    mlflow.log_artifact(comp_acc_path, artifact_path=cfg.plots)
+
+    # Metrics comparison table
+    df_results = pd.DataFrame([
+        {
+            "model_name": r["model_name"],
+            **{m: r[m] for m in metrics}
+        }
+        for r in results_list
+    ])
+
+    print("\n=== Model Comparison ===")
+    print(df_results)
+
+    mlflow.log_dict(df_results.to_dict(orient="records"), cfg.comparison_table)
+
+
+
+
+
+
+
+
+
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
     
     print("=== Data Preparation ===")
 
-    # Initialize preprocessor with cfg.data
-    preprocessor = Preprocessor(cfg.data)
+    # Initialize preprocessor
+    preprocessor = Preprocessor(cfg)
 
     # train/val
     prep_results = preprocessor.prepare_train_val(cfg.data.data_path)
@@ -65,32 +142,6 @@ def main(cfg: DictConfig):
             results = trainer.train(model, train_ds, val_ds)
             history = results["history"].history
 
-            # Log hyperparameters
-            mlflow.log_params(results["hyperparameters"])
-            mlflow.log_param("model_name", model_name)
-
-
-            # Log metrics
-            mlflow.log_metrics({m: results[m] for m in metrics})
-
-            # Log model
-            mlflow.tensorflow.log_model(model, artifact_path=cfg.logging.artifact_path)
-
-            # Log preprocessing artifacts
-            with tempfile.NamedTemporaryFile(suffix=".pkl") as f:
-                pickle.dump(scaler, f)
-                f.flush()
-                mlflow.log_artifact(f.name, artifact_path="preprocessing/scaler")
-
-            with tempfile.NamedTemporaryFile(suffix=".pkl") as f:
-                pickle.dump(encoder, f)
-                f.flush()
-                mlflow.log_artifact(f.name, artifact_path="preprocessing/encoder")
-
-            mlflow.log_dict({"features": features}, "preprocessing/features.json")
-
-            
-
             # ----- History plots -----
             loss_plot_path = plot_history_curve(
                 history, "loss", "val_loss", model_name, "Loss", "Loss", "loss.png"
@@ -102,14 +153,24 @@ def main(cfg: DictConfig):
             # ----- Confusion matrix -----
             cm_plot_path = plot_confusion_matrix(model, val_ds, model_name, "confusion_matrix.png")
 
-            # ----- Logging outside -----
-            mlflow.log_artifact(loss_plot_path, artifact_path="plots")
-            mlflow.log_artifact(acc_plot_path, artifact_path="plots")
-            mlflow.log_artifact(cm_plot_path, artifact_path="plots")
+
+            # logging
+            log_experiment_results(
+                results=results,
+                model_name=model_name,
+                model=model,
+                scaler=scaler,
+                encoder=encoder,
+                features=features,
+                metrics=metrics,
+                cfg=cfg.logging,
+                loss_plot_path=loss_plot_path,
+                acc_plot_path=acc_plot_path,
+                cm_plot_path=cm_plot_path,
+            )
 
 
             # Store results for comparison
-
             results_list.append({
                 "model_name": model_name,
                 "history": results["history"],
@@ -119,36 +180,13 @@ def main(cfg: DictConfig):
 
     # ----- Comparison run -----
     with mlflow.start_run(run_name="all_models_comparison"):
-
-        # ----- Comparison plots -----
-        comp_loss_path = plot_comparison(
-            results_list, metric="loss", ylabel="Loss",
-            title="Validation Loss Comparison", filename="comparison_val_loss.png"
+        # log comparisson
+        log_model_comparison(
+            results_list=results_list,
+            metrics=metrics,
+            plot_comparison=plot_comparison,
+            cfg=cfg.logging
         )
-
-        comp_acc_path = plot_comparison(
-            results_list, metric="accuracy", ylabel="Accuracy",
-            title="Validation Accuracy Comparison", filename="comparison_val_accuracy.png"
-        )
-
-        # ----- Logging outside -----
-        mlflow.log_artifact(comp_loss_path, artifact_path="plots")
-        mlflow.log_artifact(comp_acc_path, artifact_path="plots")
-
-
-        # Log metrics comparison table
-        df_results = pd.DataFrame([
-            {
-                "model_name": r["model_name"],
-                **{m: r[m] for m in metrics}
-            }
-            for r in results_list
-        ])
-
-        print("\n=== Model Comparison ===")
-        print(df_results)
-        mlflow.log_dict(df_results.to_dict(orient="records"), "model_comparison.json")
-
 
 if __name__ == "__main__":
     main()
@@ -157,15 +195,12 @@ if __name__ == "__main__":
 
 """
 
+python -m scripts.training training.epochs=3
+
+
 use particular file
 
 global_cfg = hydra.compose(config_name="config/config.yaml")
-
 model_cfg = hydra.compose(config_name="config/model/baseline_tuner.yaml").model
-
-tuner = ModelTuner(build_fn=build_compile_model_one_tuner,
-                   tuning_cfg=model_cfg,
-                   input_dim=global_cfg.input_dim,
-                   seed=global_cfg.seed)
 
 """

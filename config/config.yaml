@@ -10,4 +10,5 @@ defaults:
 
 
 seed: 42
+batch_size: 32
 experiment_name: breast_cancer_nn
