@@ -1,0 +1,76 @@
+data:
+  data_path: data/raw/breast_cancer.csv
+  data_test_path: data/raw/breast_cancer_test.csv
+  target_col: diagnosis
+  features:
+  - mean radius
+  - mean texture
+  - mean perimeter
+  - mean area
+  - mean smoothness
+  preprocessing:
+    scaler: StandardScaler
+    encode_categorical: false
+    val_size: 0.2
+model:
+  name: baseline
+  type: Dense
+  hidden_layer_neurons: 10
+  output_activation: sigmoid
+  lr:
+    default: 0.001
+    low: 0.0001
+    high: 0.01
+    sampling: log
+    log: true
+  hidden_layer_activation: relu
+training:
+  epochs: 4
+  callbacks: []
+  optimizer:
+    type: adam
+    lr:
+      default: 0.001
+      low: 0.0001
+      high: 0.01
+      sampling: log
+  scheduler:
+    type: cosine
+    warmup_epochs: 5
+  loss: binary_crossentropy
+  metrics:
+  - accuracy
+  - precision
+  - recall
+tuning:
+  max_trials: 1
+  executions_per_trial: 1
+  epochs: 2
+  patience: 5
+  recall_threshold: 0.8
+evaluation:
+  evaluation:
+    metrics:
+    - accuracy
+    - recall
+    - precision
+    - roc_auc
+    log_conf_matrix: true
+    plot_training_curves: true
+logging:
+  experiment_name: breast_cancer_prediction
+  log_models: true
+  save_artifacts: true
+  plots: plots
+  comparison_table: model_comparison.json
+  artifacts:
+    base_dir: artifacts
+    model: model
+    preprocessing:
+      base_dir: preprocessing
+      scaler: scaler.pkl
+      encoder: encoder.pkl
+      features: features.json
+seed: 42
+batch_size: 32
+experiment_name: breast_cancer_nn

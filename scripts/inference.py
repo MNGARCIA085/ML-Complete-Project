@@ -1,46 +1,68 @@
-import mlflow
+from mlflow.tracking import MlflowClient
 import mlflow.tensorflow
 import pickle
-import json
-import pandas as pd
+import os
+
+
 import numpy as np
 
-def load_model_and_preprocessing(run_id: str):
+
+def load_best_model(cfg, experiment_name="Test", recall_threshold=0.8, artifact_model_path="model"):
     """
-    Load a trained model and its preprocessing artifacts from MLflow.
-    
-    Args:
-        run_id (str): MLflow run ID
-    
-    Returns:
-        model: the trained TF/Keras model
-        scaler: fitted scaler
-        encoder: fitted encoder (if any, else None)
-        features: list of feature column names
+    Returns: model, scaler, encoder ready for inference
+    Selects best model according to:
+      - recall >= recall_threshold
+      - among those, highest F1 score
     """
-    # Load model
-    model_uri = f"runs:/{run_id}/model"
-    model = mlflow.tensorflow.load_model(model_uri)
-    
-    # Load scaler
-    scaler_path = mlflow.artifacts.download_artifacts(f"runs:/{run_id}/preprocessing/scaler")
-    with open(scaler_path, "rb") as f:
+    client = MlflowClient()
+    experiment = client.get_experiment_by_name(experiment_name)
+    if experiment is None:
+        raise ValueError(f"Experiment '{experiment_name}' not found.")
+    experiment_id = experiment.experiment_id
+
+    # Get all best_overall runs
+    runs = client.search_runs(
+        experiment_ids=[experiment_id],
+        filter_string="tags.mlflow.runName = 'best_overall'"
+    )
+
+    if not runs:
+        raise ValueError("No 'best_overall' runs found in the experiment.")
+
+    # Select best run
+    candidates = [r for r in runs if r.data.metrics.get("recall", 0) >= recall_threshold]
+    if candidates:
+        best_run = max(candidates, key=lambda r: r.data.metrics.get("f1_score", 0))
+    else:
+        best_run = max(runs, key=lambda r: r.data.metrics.get("recall", 0))
+
+    run_id = best_run.info.run_id
+    print(f"Selected best run_id: {run_id}")
+    print(f"Metrics: {best_run.data.metrics}")
+
+    # --- Load TensorFlow/Keras model ---
+    model = mlflow.tensorflow.load_model(f"runs:/{run_id}/{artifact_model_path}")
+
+    # --- Download preprocessing artifacts ---
+    scaler_path_local = client.download_artifacts(run_id, os.path.join(cfg.artifacts.preprocessing.base_dir, cfg.artifacts.preprocessing.scaler))
+    encoder_path_local = client.download_artifacts(run_id, os.path.join(cfg.artifacts.preprocessing.base_dir, cfg.artifacts.preprocessing.encoder))
+
+    # Load objects
+    with open(scaler_path_local, "rb") as f:
         scaler = pickle.load(f)
-    
-    # Load encoder
-    encoder_path = mlflow.artifacts.download_artifacts(f"runs:/{run_id}/preprocessing/encoder")
-    with open(encoder_path, "rb") as f:
+
+    with open(encoder_path_local, "rb") as f:
         encoder = pickle.load(f)
-    
-    # Load feature columns
-    features_path = mlflow.artifacts.download_artifacts(f"runs:/{run_id}/preprocessing/features.json")
-    with open(features_path, "r") as f:
-        features = json.load(f)["features"]
-    
-    return model, scaler, encoder, features
+
+    return model, scaler, encoder
 
 
-def predict_with_run(run_id: str, X_raw: np.ndarray):
+
+
+import pandas as pd
+
+
+def predict_with_run(cfg, X_raw: np.ndarray):
     """
     Given raw input data, load the appropriate model & preprocessing from MLflow
     and return predictions.
@@ -52,19 +74,23 @@ def predict_with_run(run_id: str, X_raw: np.ndarray):
     Returns:
         y_pred: predictions
     """
-    model, scaler, encoder, features = load_model_and_preprocessing(run_id)
+    model, scaler, encoder  = load_best_model(cfg) # features
     
     # Convert to DataFrame with proper column names
-    X_df = pd.DataFrame([X_raw], columns=features) if X_raw.ndim == 1 else pd.DataFrame(X_raw, columns=features)
+    #X_df = pd.DataFrame([X_raw], columns=features) if X_raw.ndim == 1 else pd.DataFrame(X_raw, columns=features)
+    X_df = pd.DataFrame([X_raw])
     
     # Apply preprocessing
     X_scaled = scaler.transform(X_df)
-    X_prepared = encoder.transform(X_scaled) if encoder is not None else X_scaled
+    #X_prepared = encoder.transform(X_scaled) if encoder is not None else X_scaled
     
     # Predict
-    y_pred = model.predict(X_prepared)
+    y_pred = model.predict(X_scaled)
     
     return y_pred
+
+
+
 
 
 # ---------------- Example usage ----------------
@@ -79,3 +105,21 @@ y_pred = predict_with_run(example_run_id, X_new_sample)
 print("Predicted output:", y_pred)
 """
 
+
+
+import hydra
+from omegaconf import DictConfig
+
+@hydra.main(config_path="../config", config_name="config", version_base=None)
+def main(cfg: DictConfig):
+    print('sdfdsfdsfdsfsd')
+    X_new_sample = np.random.rand(30)  # replace with actual patient data
+
+    print(X_new_sample)
+
+    y_pred = predict_with_run(cfg.logging, X_new_sample)
+    print(y_pred)
+
+
+if __name__==main():
+    main()

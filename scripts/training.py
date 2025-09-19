@@ -24,10 +24,13 @@ MODEL_BUILDERS = {
 
 # logging_utils .> ml_logger
 def log_experiment_results(results, model_name, model, scaler, encoder, features,
-                           metrics, cfg, loss_plot_path, acc_plot_path, cm_plot_path):
+                           metrics, cfg, loss_plot_path, acc_plot_path, cm_plot_path, global_cfg):
     
     # Log model name
     mlflow.log_param("model_name", model_name)
+
+    # relaeted to the ds
+    mlflow.log_param("val_split", global_cfg.data.preprocessing.val_size)
 
     # Log hyperparameters
     mlflow.log_params(results["hyperparameters"])
@@ -37,20 +40,20 @@ def log_experiment_results(results, model_name, model, scaler, encoder, features
 
     if cfg.save_artifacts:
         # Log model
-        mlflow.tensorflow.log_model(model, artifact_path=cfg.artifact_path)
+        mlflow.tensorflow.log_model(model, artifact_path=cfg.artifacts.model) # artifact_path
 
         # Log preprocessing artifacts
         with tempfile.NamedTemporaryFile(suffix=".pkl") as f:
             pickle.dump(scaler, f)
             f.flush()
-            mlflow.log_artifact(f.name, artifact_path=cfg.preprocessing.scaler)
+            mlflow.log_artifact(f.name, artifact_path=f"{cfg.artifacts.preprocessing.base_dir}/{cfg.artifacts.preprocessing.scaler}")
 
         with tempfile.NamedTemporaryFile(suffix=".pkl") as f:
             pickle.dump(encoder, f)
             f.flush()
-            mlflow.log_artifact(f.name, artifact_path=cfg.preprocessing.encoder)
+            mlflow.log_artifact(f.name, artifact_path=f"{cfg.artifacts.preprocessing.base_dir}/{cfg.artifacts.preprocessing.encoder}")
 
-        mlflow.log_dict({"features": features}, cfg.preprocessing.features)
+        mlflow.log_dict({"features": features}, f"{cfg.artifacts.preprocessing.base_dir}/{cfg.artifacts.preprocessing.features}")
 
     # Always log plots (these are lightweight and useful for debugging)
     mlflow.log_artifact(loss_plot_path, artifact_path=cfg.plots)
@@ -167,6 +170,7 @@ def main(cfg: DictConfig):
                 loss_plot_path=loss_plot_path,
                 acc_plot_path=acc_plot_path,
                 cm_plot_path=cm_plot_path,
+                global_cfg=cfg,
             )
 
 

@@ -2,7 +2,12 @@ import mlflow.tensorflow
 import pickle
 from mlflow.tracking import MlflowClient
 
-def load_best_model(experiment_name="Default", recall_threshold=0.8, artifact_model_path="model"):
+
+
+
+
+
+def load_best_model(cfg, experiment_name="Test", recall_threshold=0.8, artifact_model_path="model"): #Default
     """
     Returns: model, scaler, encoder ready for inference
     Selects best model according to:
@@ -24,6 +29,9 @@ def load_best_model(experiment_name="Default", recall_threshold=0.8, artifact_mo
     if not runs:
         raise ValueError("No 'best_overall' runs found in the experiment.")
 
+
+    print(runs)
+
     # Custom selection function
     candidates = [r for r in runs if r.data.metrics.get("recall", 0) >= recall_threshold]
     if candidates:
@@ -39,8 +47,33 @@ def load_best_model(experiment_name="Default", recall_threshold=0.8, artifact_mo
     model = mlflow.tensorflow.load_model(f"runs:/{run_id}/{artifact_model_path}")
 
     # Load preprocessing artifacts
-    scaler_path = f"mlruns/{experiment_id}/{run_id}/artifacts/preprocessing/scaler.pkl"
-    encoder_path = f"mlruns/{experiment_id}/{run_id}/artifacts/preprocessing/encoder.pkl"
+    #scaler_path = f"mlruns/{experiment_id}/{run_id}/artifacts/preprocessing/scaler.pkl"
+    #encoder_path = f"mlruns/{experiment_id}/{run_id}/artifacts/preprocessing/encoder.pkl"
+
+
+    import os
+
+    scaler_path = os.path.join(
+        "mlruns",
+        experiment_id,
+        run_id,
+        cfg.artifacts.base_dir,
+        cfg.artifacts.preprocessing.base_dir,
+        cfg.artifacts.preprocessing.scaler
+    )
+
+    encoder_path = os.path.join(
+        "mlruns",
+        experiment_id,
+        run_id,
+        cfg.artifacts.base_dir,
+        cfg.artifacts.preprocessing.base_dir,
+        cfg.artifacts.preprocessing.encoder
+    )
+
+
+
+
 
     scaler = pickle.load(open(scaler_path, "rb"))
     encoder = pickle.load(open(encoder_path, "rb"))
@@ -49,9 +82,15 @@ def load_best_model(experiment_name="Default", recall_threshold=0.8, artifact_mo
 
 
 
-def main():
+
+import hydra
+from omegaconf import DictConfig
+
+@hydra.main(config_path="../config", config_name="config", version_base=None)
+def main(cfg: DictConfig):
     model, scaler, encoder = load_best_model(
-        experiment_name="Default",
+        cfg.logging,
+        experiment_name="Test",
         recall_threshold=0.8,
         artifact_model_path="model"
     )
@@ -75,6 +114,12 @@ def main():
 
 if __name__==main():
     main()
+
+
+
+
+
+
 
 
 """

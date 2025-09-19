@@ -41,6 +41,17 @@ def get_best_model(all_results, recall_threshold=0.8, metric_priority="f1_score"
 
 
 
+
+import tempfile
+import pickle
+
+
+
+#export MLFLOW_TRACKING_URI=http://localhost:5000 in console
+#export MLFLOW_TRACKING_URI=file://$PWD/mlruns
+
+
+
 def log_best_model(best, cfg, scaler, encoder, features):
     with mlflow.start_run(run_name="best_overall") as best_run:
         mlflow.log_params(best["hp"])
@@ -53,19 +64,21 @@ def log_best_model(best, cfg, scaler, encoder, features):
         # Save TensorFlow/Keras model
         mlflow.tensorflow.log_model(
             model=best["model"],
-            artifact_path=cfg.logging.artifact_path  # e.g. "model"
+            artifact_path=cfg.logging.artifacts.model  # e.g. "model"
         )
 
         # Save preprocessing artifacts
-        artifact_dir = f"artifacts_{best['name']}"
+        artifact_dir = f"{cfg.logging.artifacts.base_dir}_{best['name']}"
         os.makedirs(artifact_dir, exist_ok=True)
         with open(os.path.join(artifact_dir, "scaler.pkl"), "wb") as f:
             pickle.dump(scaler, f)
         with open(os.path.join(artifact_dir, "encoder.pkl"), "wb") as f:
             pickle.dump(encoder, f)
-        mlflow.log_dict({"features": features}, "preprocessing/features.json")
+        mlflow.log_dict({"features": features}, f"{cfg.logging.artifacts.preprocessing.base_dir}/{cfg.logging.artifacts.preprocessing.base_dir}")
 
-        mlflow.log_artifacts(artifact_dir, artifact_path="preprocessing")
+        mlflow.log_artifacts(artifact_dir, artifact_path=cfg.logging.artifacts.preprocessing.base_dir)
+        
+
 
     return best_run.info.run_id
 
@@ -77,6 +90,12 @@ def log_best_model(best, cfg, scaler, encoder, features):
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
+
+
+    # Set MLflow experiment
+    mlflow.set_experiment('Test')
+
+
     print("=== Data Preparation ===")
     preprocessor = Preprocessor(cfg)
     prep_results = preprocessor.prepare_train_val(cfg.data.data_path)

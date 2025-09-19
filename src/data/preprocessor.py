@@ -91,7 +91,29 @@ class Preprocessor:
             "input_shape": self.input_shape
         }
 
-    def prepare_test(self, filepath):
+    def prepare_test(self, filepath, scaler, encoder):
+
+        df = self.load_data(filepath)
+        drop_cols = ["id", "Unnamed: 32"]
+        df = df.drop(columns=[c for c in drop_cols if c in df.columns]).dropna()
+        labels = df[self.target_col].map(encoder)
+        features = df.drop(columns=[self.target_col])
+
+
+        
+        
+        #features_scaled = scaler.transform(features)
+        features_scaled = pd.DataFrame(scaler.transform(features), columns=features.columns)
+
+
+        print(features_scaled)
+        
+
+        test_ds = self.tf_dataset(features_scaled, labels, shuffle=False)
+        return test_ds
+
+
+        """
         if self.scaler is None:
             raise ValueError("Scaler not fitted. Run prepare_train_val first.")
 
@@ -103,6 +125,7 @@ class Preprocessor:
         features_scaled = self.transform_with_scaler(features)
         test_ds = self.tf_dataset(features_scaled, labels, shuffle=False)
         return test_ds
+        """
 
     def get_input_shape(self):
         if self.input_shape is None:
