@@ -1,16 +1,8 @@
 experiment_name: "breast_cancer_prediction"
 log_models: true
-save_artifacts: true
-#artifact_path: "model"
-#artifact_path_preprocessing: "preprocessing"
-#artifacts_base_dir: "artifacts"
-#preprocessing:
-#    scaler: "preprocessing/scaler"
-#    encoder: "preprocessing/encoder"
-#    features: "preprocessing/features.json"
+save_artifacts: false
 plots: "plots"
 comparison_table: "model_comparison.json"
-
 artifacts:
   base_dir: "artifacts"
   model: "model"                          

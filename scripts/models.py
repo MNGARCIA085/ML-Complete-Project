@@ -1,15 +1,10 @@
 import hydra
 from omegaconf import DictConfig
 from src.data.preprocessor import Preprocessor
-from src.models.baseline import build_compile_baseline
-from src.models.model1 import build_compile_model_one
+from src.models.factory import get_model
 
 
-# Map model names to their builder functions
-MODEL_BUILDERS = {
-    "baseline": build_compile_baseline,
-    "model1": build_compile_model_one
-}
+
 
 @hydra.main(config_path="../config", config_name="config", version_base="1.3")
 def main(cfg: DictConfig):
@@ -33,12 +28,8 @@ def main(cfg: DictConfig):
     # Determine which model to train from cfg.model
     model_name = cfg.model.name
 
-    if model_name not in MODEL_BUILDERS:
-        raise ValueError(f"Unknown model: {model_name}")
-
-
-    # Build the model
-    model = MODEL_BUILDERS[model_name](cfg.model, cfg.training, input_dim=input_shape)
+    # Build and compile the model    
+    model = get_model(model_name, cfg.model, cfg.training, input_dim=input_shape)
     print(model.summary())
 
     # More info about the model

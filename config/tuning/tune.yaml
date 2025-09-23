@@ -1,3 +1,4 @@
+experiment_name: "Tuning"
 max_trials: 1
 executions_per_trial: 1
 epochs: 2
