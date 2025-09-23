@@ -1,5 +1,3 @@
-
-
 # compute F1-score
 def compute_f1(precision, recall):
     """Compute F1"""

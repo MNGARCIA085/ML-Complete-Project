@@ -1,4 +1,5 @@
 evaluation:
-  metrics: ["accuracy", "recall", "precision", "roc_auc"]
+  metrics: ["accuracy", "precision", "recall", "roc_auc"]
   log_conf_matrix: true
   plot_training_curves: true
+recall_threshold: 0.8

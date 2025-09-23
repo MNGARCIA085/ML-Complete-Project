@@ -3,9 +3,9 @@ import time
 import tensorflow as tf
 import kerastuner as kt
 import numpy as np
-from src.utils.metrics import compute_f1
+from src.common.metrics import compute_f1
 from src.common.callbacks import HistoryCapture
-from src.utils.utils import set_seed
+from src.common.utils import set_seed
 
 
 

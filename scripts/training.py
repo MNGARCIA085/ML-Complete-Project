@@ -4,7 +4,7 @@ import mlflow
 from src.data.preprocessor import Preprocessor
 from src.models.factory import get_model
 from src.training.trainer import ModelTrainer
-from src.utils.plotting import plot_history_curve,plot_confusion_matrix,plot_comparison
+from src.common.plotting import plot_history_curve,plot_confusion_matrix,plot_comparison
 from src.experiments.logging import log_experiment_results,log_model_comparison
 
 

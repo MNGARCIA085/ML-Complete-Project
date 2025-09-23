@@ -1,4 +1,4 @@
-from src.utils.metrics import compute_f1
+from src.common.metrics import compute_f1
 
 
 class ModelTrainer:

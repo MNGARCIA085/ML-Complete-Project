@@ -6,7 +6,7 @@ from src.data.preprocessor import Preprocessor
 from src.experiments.logging import log_best_model, basic_logging_per_model, basic_comparisson
 from src.experiments.selection import get_best_model
 from src.models.factory import get_model_builder
-from src.utils.metrics import compute_f1
+from src.common.metrics import compute_f1
 
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
