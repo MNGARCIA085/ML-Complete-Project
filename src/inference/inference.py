@@ -1,6 +1,7 @@
 import pandas as pd
-from src.experiments.loading import load_best_model
 import numpy as np
+from src.experiments.loading import load_best_model
+from src.data.preprocessor import Preprocessor
 
 
 
@@ -17,20 +18,22 @@ def predict_with_best_model(cfg, X_raw: np.ndarray):
     Returns:
         y_pred: predictions
     """
+
+    # Load model, scaler.....................
     model, scaler, encoder, features  = load_best_model(cfg.logging, cfg.tuning.experiment_name, 
                     cfg.tuning.recall_threshold, cfg.logging.artifacts.model)
     
-    # Convert to DataFrame with proper column names
-    X_df = pd.DataFrame([X_raw], columns=features) if X_raw.ndim == 1 else pd.DataFrame(X_raw, columns=features)
+    
+    # Preprocessing data
+    preprocessor = Preprocessor(cfg)
+    X_prep = preprocessor.prepare_sample(X_raw, scaler, encoder, features)
 
-    # Apply preprocessing (and other prep. but in this case i will already pass 30 features)
-    X_scaled = scaler.transform(X_df)
-    #X_prepared = encoder.transform(X_scaled) if encoder is not None else X_scaled
     
     # Predict
-    y_pred = model.predict(X_scaled)
+    y_pred = model.predict(X_prep)
     
     return y_pred
+
 
 
 

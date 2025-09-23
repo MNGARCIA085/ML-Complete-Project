@@ -2,7 +2,7 @@
 import mlflow.tensorflow
 import pickle
 from mlflow.tracking import MlflowClient
-from .selection import get_best_model
+from .selection import get_best_model_runs
 import json
 
 
@@ -31,7 +31,7 @@ def load_best_model(cfg, experiment_name, recall_threshold, artifact_model_path)
         raise ValueError("No 'best_overall' runs found in the experiment.")
 
     # Select best run (within this experiment)
-    best_run = get_best_model(runs)
+    best_run = get_best_model_runs(runs)
     run_id = best_run.info.run_id
     print(f"Selected best run_id: {run_id}")
     print(f"Metrics: {best_run.data.metrics}")

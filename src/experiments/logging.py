@@ -85,10 +85,14 @@ def log_model_comparison(results_list, metrics, plot_comparison, cfg):
 
 
 # log best model
-def log_best_model(best, cfg, scaler, encoder, features):
+def log_best_model(best, cfg, scaler, encoder, features, test_metrics=None):
     with mlflow.start_run(run_name="best_overall") as best_run:
         mlflow.log_params(best["hp"])
         mlflow.log_metrics(best["metrics"])
+
+        # test metrics (if any)
+        if test_metrics:
+            mlflow.log_metrics(test_metrics)
 
         # Log extra info
         mlflow.log_param("model_name", best["name"])

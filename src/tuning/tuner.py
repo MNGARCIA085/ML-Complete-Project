@@ -2,42 +2,10 @@ import yaml
 import time
 import tensorflow as tf
 import kerastuner as kt
-import random
 import numpy as np
-
-
-
-
-# seed
-def set_seed(seed=42):
-    """Set seed for random, numpy, and tensorflow."""
-    random.seed(seed)
-    np.random.seed(seed)
-    tf.random.set_seed(seed)
-
-
-
-
-# Capture history
-class HistoryCapture(tf.keras.callbacks.Callback):
-    """Capture training history in a dict format."""
-    def __init__(self):
-        super().__init__()
-        self.history = {}
-
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs or {}
-        for k, v in logs.items():
-            self.history.setdefault(k, []).append(float(v))
-
-
-
-
-# compute F1-score
-def compute_f1(precision, recall):
-    """Compute F1"""
-    f1 = 2 * (precision * recall) / (precision + recall + 1e-8)
-    return f1
+from src.utils.metrics import compute_f1
+from src.common.callbacks import HistoryCapture
+from src.utils.utils import set_seed
 
 
 
@@ -146,3 +114,9 @@ class ModelTuner:
             "optimizer": optimizer,
             "final_learning_rate": learning_rate,
         }
+
+
+"""
+global_cfg = hydra.compose(config_name="config/config.yaml")
+model_cfg = hydra.compose(config_name="config/model/model1.yaml").model
+"""

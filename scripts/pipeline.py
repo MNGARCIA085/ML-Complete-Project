@@ -6,7 +6,7 @@ from src.data.preprocessor import Preprocessor
 from src.experiments.logging import log_best_model, basic_logging_per_model, basic_comparisson
 from src.experiments.selection import get_best_model
 from src.models.factory import get_model_builder
-
+from src.utils.metrics import compute_f1
 
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
@@ -22,6 +22,7 @@ def main(cfg: DictConfig):
     keys = ["train_ds", "val_ds", "scaler", "encoder", "feature_columns", "input_shape"]
     train_ds, val_ds, scaler, encoder, features, input_shape_raw = (prep_results[k] for k in keys)
     input_dim = input_shape_raw[0]
+
 
     print("=== Models Tuning ===")
     models_to_tune = ["baseline", "model1"]
@@ -61,6 +62,20 @@ def main(cfg: DictConfig):
     # get best model
     best = get_best_model(all_results, recall_threshold=cfg.tuning.recall_threshold)
 
+    
+    # eval
+    print("=== Evaluation on test set ===")
+    test_ds = preprocessor.prepare_test(cfg.data.data_test_path, scaler, encoder)
+    test_metrics_values = best["model"].evaluate(test_ds)
+    test_metrics = {
+                    'test_loss': test_metrics_values[0],
+                    'test_accuracy': test_metrics_values[1],
+                    'test_precision': test_metrics_values[2],
+                    'test_recall': test_metrics_values[3],
+                    'test_f1': compute_f1(test_metrics_values[2], test_metrics_values[3]),
+                    }
+
+
     # Final run: store best model + preprocessing + metrics
     best_run_id = log_best_model(
         best=best,
@@ -68,14 +83,11 @@ def main(cfg: DictConfig):
         scaler=scaler,
         encoder=encoder,
         features=features,
+        test_metrics=test_metrics,
     )
 
 
-    # final prints
-    print(f"Overall best model: {best['name']}")
-    print("Best hyperparameters:", best["hp"])
-    print("Best validation metrics:", best["metrics"])
-    print("Final best model run_id:", best_run_id)
+
 
 
 if __name__ == "__main__":

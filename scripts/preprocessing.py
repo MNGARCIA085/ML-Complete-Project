@@ -9,7 +9,7 @@ def main(cfg: DictConfig):
 
     #print(cfg.data)
 
-    # Initialize preprocessor with cfg.data
+    # Initialize preprocessor
     preprocessor = Preprocessor(cfg)
 
     # train/val
