@@ -3,6 +3,7 @@ import pandas as pd
 import tempfile
 import pickle
 import os
+import shutil
 
 
 
@@ -105,20 +106,28 @@ def log_best_model(best, cfg, scaler, encoder, features, test_metrics=None):
         )
 
         # Save preprocessing artifacts
-        artifact_dir = f"{cfg.logging.artifacts.base_dir}_{best['name']}"
+        artifact_dir = f"{cfg.logging.artifacts.base_dir}_{best['name']}" # e.g.. artifact_model1
         os.makedirs(artifact_dir, exist_ok=True)
         with open(os.path.join(artifact_dir, "scaler.pkl"), "wb") as f:
             pickle.dump(scaler, f)
         with open(os.path.join(artifact_dir, "encoder.pkl"), "wb") as f:
             pickle.dump(encoder, f)
+
+        mlflow.log_artifacts(artifact_dir, artifact_path=cfg.logging.artifacts.preprocessing.base_dir)
+
+        # remove temp. dir
+        shutil.rmtree(artifact_dir)
         
         mlflow.log_dict({"features": features}, 
                 f"{cfg.logging.artifacts.preprocessing.base_dir}/features.json")
 
-        mlflow.log_artifacts(artifact_dir, artifact_path=cfg.logging.artifacts.preprocessing.base_dir)
-
+        
     return best_run.info.run_id
 
+
+# with cfg.logging.artifacts.model=model and cfg.logging.artifacts.preprocessing.base_dir=preprocessing
+# artifacts should be under " ......<run_id>/artifacts/preprocessing/"; e.g.  <run_id>/artifacts/preprocessing/encoder.pkl
+# model in ..."<run_id>"/model
 
 
 def basic_logging_per_model(model_name, epochs, best_hp, val_metrics):
