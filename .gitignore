@@ -221,3 +221,11 @@ mlruns/
 # OS
 .DS_Store
 Thumbs.db
+
+
+# MLflow runs
+mlruns/
+
+# Hydra outputs
+outputs/
+multirun/
