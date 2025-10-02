@@ -86,7 +86,7 @@ def log_model_comparison(results_list, metrics, plot_comparison, cfg):
 
 
 # log best model
-def log_best_model(best, cfg, scaler, encoder, features, test_metrics=None):
+def log_best_model(best, cfg, scaler, encoder, features, test_metrics, cm_plot_path, roc_curve_plot_path):
     with mlflow.start_run(run_name="best_overall") as best_run:
         mlflow.log_params(best["hp"])
         mlflow.log_metrics(best["metrics"])
@@ -120,6 +120,11 @@ def log_best_model(best, cfg, scaler, encoder, features, test_metrics=None):
         
         mlflow.log_dict({"features": features}, 
                 f"{cfg.logging.artifacts.preprocessing.base_dir}/features.json")
+
+
+        # Curves
+        mlflow.log_artifact(cm_plot_path, artifact_path=cfg.logging.plots)
+        mlflow.log_artifact(roc_curve_plot_path, artifact_path=cfg.logging.plots)
 
         
     return best_run.info.run_id

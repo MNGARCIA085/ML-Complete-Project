@@ -7,6 +7,7 @@ from src.experiments.logging import log_best_model, basic_logging_per_model, bas
 from src.experiments.selection import get_best_model
 from src.models.factory import get_model_builder
 from src.common.metrics import compute_f1
+from src.common.plotting import plot_confusion_matrix, plot_roc_curve
 
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
@@ -76,7 +77,17 @@ def main(cfg: DictConfig):
                     }
 
 
-    # Final run: store best model + preprocessing + metrics
+
+
+    # ----- Confusion matrix -----
+    cm_plot_path = plot_confusion_matrix(best['model'], test_ds, best['name'], "confusion_matrix.png")
+
+    # ----- ROC Curve -----
+    roc_curve_plot_path = plot_roc_curve(best['model'], test_ds, best['name'], "roc_curve.png")
+
+
+
+    # Final run: store best model + preprocessing + metrics + confussion matrix + roc curve 
     best_run_id = log_best_model(
         best=best,
         cfg=cfg,
@@ -84,6 +95,8 @@ def main(cfg: DictConfig):
         encoder=encoder,
         features=features,
         test_metrics=test_metrics,
+        cm_plot_path=cm_plot_path,
+        roc_curve_plot_path=roc_curve_plot_path,
     )
 
 
