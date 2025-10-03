@@ -31,4 +31,4 @@ CMD ["bash"]
 
 #docker build -f Dockerfile.ml -t ml_env:latest .
 #docker run -it -v $(pwd):/app ml_env:latest
-#docker run -it -p 8080:8080 -v $(pwd):/app ml_env:latest; mlflow ui --host 0.0.0.0 --port 8080
+#docker run -it -p 5000:5000 -v $(pwd):/app ml_env:latest; mlflow ui --host 0.0.0.0 --port 5000

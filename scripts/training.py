@@ -31,7 +31,8 @@ def main(cfg: DictConfig):
 
 
     # Set MLflow experiment
-    mlflow.set_experiment(cfg.logging.experiment_name)
+    #mlflow.set_experiment(cfg.logging.experiment_name)
+    mlflow.set_experiment('Training')
 
     results_list = []
 

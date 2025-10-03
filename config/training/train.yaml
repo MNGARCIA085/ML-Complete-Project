@@ -1,4 +1,4 @@
-epochs: 4
+epochs: 5
 callbacks: []
 optimizer:
   type: "adam"

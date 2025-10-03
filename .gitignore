@@ -229,3 +229,8 @@ mlruns/
 # Hydra outputs
 outputs/
 multirun/
+
+
+# Ignore KerasTuner results
+tuner_results/
+

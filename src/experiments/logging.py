@@ -49,6 +49,11 @@ def log_experiment_results(results, model_name, model, scaler, encoder, features
         mlflow.log_artifact(acc_plot_path, artifact_path=global_cfg.logging.plots)
         mlflow.log_artifact(cm_plot_path, artifact_path=global_cfg.logging.plots)
 
+        # Remove local file
+        os.remove(loss_plot_path)
+        os.remove(acc_plot_path)
+        os.remove(cm_plot_path)
+
 
 
 # log comparisson
@@ -70,6 +75,11 @@ def log_model_comparison(results_list, metrics, plot_comparison, cfg):
         mlflow.log_artifact(comp_loss_path, artifact_path=cfg.plots)
         mlflow.log_artifact(comp_acc_path, artifact_path=cfg.plots)
 
+        # remove local file
+        os.remove(comp_loss_path)
+        os.remove(comp_acc_path)
+
+
         # Metrics comparison table
         df_results = pd.DataFrame([
             {
@@ -83,6 +93,8 @@ def log_model_comparison(results_list, metrics, plot_comparison, cfg):
         print(df_results)
 
         mlflow.log_dict(df_results.to_dict(orient="records"), cfg.comparison_table)
+
+
 
 
 # log best model
@@ -126,8 +138,15 @@ def log_best_model(best, cfg, scaler, encoder, features, test_metrics, cm_plot_p
         mlflow.log_artifact(cm_plot_path, artifact_path=cfg.logging.plots)
         mlflow.log_artifact(roc_curve_plot_path, artifact_path=cfg.logging.plots)
 
+        # Remove local file
+        os.remove(cm_plot_path)
+        os.remove(roc_curve_plot_path)
+
         
     return best_run.info.run_id
+
+
+
 
 
 # with cfg.logging.artifacts.model=model and cfg.logging.artifacts.preprocessing.base_dir=preprocessing
